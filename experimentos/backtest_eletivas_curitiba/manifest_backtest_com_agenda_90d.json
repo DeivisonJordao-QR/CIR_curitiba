@@ -1,0 +1,72 @@
+{
+  "title": "Backtest de cirurgias eletivas · Curitiba · com agenda · 90 dias",
+  "sidebar_title": "Backtest com agenda 90d",
+  "slides": [
+    {
+      "type": "cover",
+      "menu": "Abertura",
+      "eyebrow": "Backtest retrospectivo",
+      "title": "Previsão de cirurgias eletivas",
+      "subtitle": "Hospital Nossa Senhora do Pilar S.A. · realizado e previsto com features de agenda, com seleção de DFU e horizonte.",
+      "period": "Intervalo previsto: 20/10/2025 a 17/01/2026 · D1, D2, D7, D30 e D90",
+      "evidence": "Job run 116639050936094 · Databricks pessoal"
+    },
+    {
+      "type": "kpi_summary",
+      "menu": "Resumo",
+      "title": "Escopo do backtest",
+      "cards": [
+        {
+          "label": "Período avaliado",
+          "value": "90 dias",
+          "note": "2025-10-20 a 2026-01-17"
+        },
+        {
+          "label": "Previsões",
+          "value": "2.700",
+          "note": "90 dias × 6 DFUs × 5 horizontes"
+        },
+        {
+          "label": "Variante",
+          "value": "Com agenda",
+          "note": "Uma variante selecionada"
+        },
+        {
+          "label": "Origens móveis",
+          "value": "179",
+          "note": "Treino recalculado conforme o horizonte"
+        }
+      ],
+      "takeaways": [
+        {
+          "heading": "Gráfico interativo",
+          "text": "Escolha uma DFU e um horizonte. O gráfico compara realizado e previsto por dia; as métricas MAE, RMSE, viés e WAPE acompanham a seleção."
+        },
+        {
+          "heading": "Métrica agregada D1",
+          "text": "Nos seis grupos combinados: MAE 0,26, RMSE 0,63, viés -0,002 e WAPE 7,3%. São 540 observações (90 dias × 6 DFUs)."
+        }
+      ]
+    },
+    {
+      "type": "chart",
+      "menu": "Gráfico e métricas",
+      "title": "Previsto e realizado por seleção",
+      "subtitle": "As métricas aparecem acima do gráfico e correspondem à DFU e ao horizonte selecionados.",
+      "plotly_file": "grafico_backtest_com_agenda_90d.html",
+      "risk": "WAPE não é definido quando o realizado da DFU no período é zero; nesse caso, o indicador aparece como n/d."
+    },
+    {
+      "type": "method",
+      "menu": "Método e limites",
+      "title": "Método, dados e limitações",
+      "paragraphs": [
+        "Resultado do job run 116639050936094 (artefato backtest_rolling_20251020_90d_d1c4f895). Escopo: hub Curitiba, estabelecimento 1 (Hospital Nossa Senhora do Pilar S.A.). Foram avaliados 90 dias consecutivos, de 2025-10-20 a 2026-01-17, para seis DFUs, cinco horizontes e somente a variante com_agenda. Isso produz 2,700 previsões e 90 observações por DFU/horizonte; o consolidado por horizonte tem 540 observações.",
+        "Para uma data prevista T e horizonte H, o treino usa somente dados anteriores ao início da janela de previsão T − (H − 1) dias. Cada horizonte tem seu próprio corte móvel; o gráfico compara a previsão e o realizado na mesma data-alvo.",
+        "A elegibilidade exige dt_inicio_real menos o primeiro dt_agendamento maior ou igual a 24 horas, vinculados por hub e nr_cirurgia. O modelo com_agenda inclui as features de agenda disponíveis no corte. Timestamps são usados como armazenados, sem conversão de fuso. As fontes são somente leitura e os resultados ficam em arquivos no Workspace pessoal, sem gravação em tabelas."
+      ],
+      "limitation": "A reconstrução histórica da agenda é aproximada porque dt_agenda não é snapshot temporal versionado. As métricas descrevem este período retrospectivo e não demonstram impacto operacional futuro.",
+      "footer": "Curitiba · Hospital Nossa Senhora do Pilar · Job run 116639050936094 · Dhauz design system 2.0.0"
+    }
+  ]
+}

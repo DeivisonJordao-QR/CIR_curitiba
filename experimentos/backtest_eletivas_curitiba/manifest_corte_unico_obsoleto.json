@@ -1,0 +1,64 @@
+{
+  "title": "Backtest das cirurgias eletivas — Curitiba",
+  "sidebar_title": "Backtest eletivas",
+  "slides": [
+    {
+      "type": "cover",
+      "menu": "Abertura",
+      "eyebrow": "Experimento retrospectivo",
+      "title": "Previsão de cirurgias eletivas",
+      "subtitle": "Comparação de previsto e realizado por DFU nos experimentos com e sem agenda.",
+      "period": "Corte em 01/01/2026 · previsão de 180 dias",
+      "evidence": "Backtest executado no Databricks"
+    },
+    {
+      "type": "kpi_summary",
+      "menu": "Resumo",
+      "title": "Escopo deste resultado",
+      "cards": [
+        {"label": "Data de corte", "value": "01/01/2026", "note": "Treino até 31/12/2025"},
+        {"label": "Previsão gerada", "value": "180 dias", "note": "01/01 a 29/06/2026"},
+        {"label": "Horizontes avaliados", "value": "5 pontos", "note": "D1 · D2 · D7 · D30 · D90"},
+        {"label": "DFUs exibidas", "value": "6 grupos", "note": "Realizado e duas variantes por painel"}
+      ],
+      "takeaways": [
+        {"heading": "Leitura do gráfico", "text": "Cada painel mostra realizado e previsões diariamente, do dia 1 ao dia 180 após o corte; passe o cursor para ver a data e o valor."},
+        {"heading": "Interpretação", "text": "Os erros variam por DFU e horizonte; este único corte é descritivo e não seleciona uma variante vencedora."}
+      ]
+    },
+    {
+      "type": "chart",
+      "menu": "Previsto × realizado",
+      "title": "Série diária: previsto e realizado por DFU",
+      "subtitle": "Período completo de 01/01 a 29/06/2026; o eixo X marca os dias após o corte.",
+      "plotly_file": "grafico_comparativo.html"
+    },
+    {
+      "type": "table",
+      "menu": "Métricas",
+      "title": "Erro agregado nos seis grupos DFU",
+      "subtitle": "MAE é a média do erro absoluto entre DFUs; WAPE é o erro absoluto total dividido pelo realizado total.",
+      "columns": ["Horizonte", "MAE sem agenda", "MAE com agenda", "WAPE sem agenda", "WAPE com agenda"],
+      "rows": [
+        ["D1", "0,17", "0,00", "—", "—"],
+        ["D2", "0,17", "0,00", "0,50", "0,00"],
+        ["D7", "2,00", "0,83", "1,09", "0,45"],
+        ["D30", "0,50", "0,83", "0,09", "0,16"],
+        ["D90", "1,17", "1,33", "0,24", "0,28"]
+      ],
+      "download_filename": "metricas_backtest_curitiba.csv"
+    },
+    {
+      "type": "method",
+      "menu": "Método e limites",
+      "title": "Método, dados e limitações",
+      "paragraphs": [
+        "Fonte dos resultados: job run 380995029263596, artefato backtest_20260101_180d_f3747895 do job backtest_eletivas_curitiba_experimento. Hub Curitiba, seis DFUs; a série diária cobre 180 dias, de 01/01 a 29/06/2026. O treinamento termina no dia anterior ao corte.",
+        "Os pontos exibidos são D1, D2, D7, D30 e D90. A elegibilidade das cirurgias realizadas segue dt_inicio_real menos o primeiro dt_agendamento maior ou igual a 24 horas, vinculados por hub e nr_cirurgia. Os horários foram usados como armazenados, sem conversão de fuso.",
+        "A variante sem agenda não usa contagens de agenda como feature. A variante com agenda usa a agenda conhecida estimada no corte. Os artefatos estão na pasta pessoal do Workspace Databricks; nenhuma tabela foi escrita."
+      ],
+      "limitation": "A fonte de agenda consultada não é snapshot versionado de dt_agenda; o resultado da variante com agenda é aproximado. Métricas de um único corte e de cinco dias pontuais não estimam estabilidade entre cortes nem sustentam escolha automática de modelo. Como o realizado total em D1 foi zero, WAPE não é definido nesse horizonte.",
+      "footer": "Experimento Curitiba · Job run 380995029263596 · Dhauz design system 2.0.0"
+    }
+  ]
+}

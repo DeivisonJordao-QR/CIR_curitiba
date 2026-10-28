@@ -1,0 +1,49 @@
+{
+  "run_id": "backtest_20260101_180d_f3747895",
+  "hub": "Curitiba",
+  "data_processamento": "2026-10-22",
+  "data_corte": "2026-01-01",
+  "dias_previstos": 180,
+  "horizontes_avaliados": [
+    "D1",
+    "D2",
+    "D7",
+    "D30",
+    "D90"
+  ],
+  "dias_treino": 1096,
+  "dias_treino_minimos": 730,
+  "variantes": [
+    "sem_agenda",
+    "com_agenda"
+  ],
+  "metricas_descritivas_sem_limite_de_aprovacao": [
+    "MAE",
+    "RMSE",
+    "vies",
+    "WAPE"
+  ],
+  "regra_eletividade": "dt_inicio_real - min(dt_agendamento) >= 24h por hub+nr_cirurgia",
+  "sem_conversao_de_fuso": true,
+  "fontes_somente_leitura": [
+    "bi_dev.gold.hc_cirurgia",
+    "bi_dev.gold.hc_agenda_cirurgica",
+    "bi_dev.gold.hc_pessoa_fisica",
+    "planejamento_integrado.gold.calendario_curitiba"
+  ],
+  "gravacao_em_tabelas": false,
+  "historico_agenda_ponto_no_tempo": "aproximado; fonte consultada não é snapshot versionado de dt_agenda",
+  "auditoria_eletividade": {
+    "cirurgias_realizadas_com_chave": 54384,
+    "sem_criacao": 16279,
+    "criadas_menos_de_24h_antes": 5930,
+    "eletivas_elegiveis": 32175,
+    "cirurgias_com_multiplos_agendamentos": 0,
+    "cirurgias_com_empate_na_criacao": 0
+  },
+  "artefatos": {
+    "previsoes": "/Workspace/Users/deivison.jordao-dhauz@hospitalcare.com.br/experimentos/previsao_eletivas_curitiba/backtest/backtest_20260101_180d_f3747895/previsoes_horizontes.csv",
+    "previsoes_diarias": "/Workspace/Users/deivison.jordao-dhauz@hospitalcare.com.br/experimentos/previsao_eletivas_curitiba/backtest/backtest_20260101_180d_f3747895/previsoes_diarias.csv",
+    "metricas": "/Workspace/Users/deivison.jordao-dhauz@hospitalcare.com.br/experimentos/previsao_eletivas_curitiba/backtest/backtest_20260101_180d_f3747895/metricas.csv"
+  }
+}

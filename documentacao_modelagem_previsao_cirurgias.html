@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Previsão de Cirurgias — documentação técnica</title>
+  <style>
+    :root{--ink:#14213d;--blue:#146c94;--pale:#eef7fb;--line:#cfd8df;--warn:#fff3cd;--good:#e8f5e9}*{box-sizing:border-box}body{font:15px/1.55 Arial,sans-serif;color:#20262e;max-width:1120px;margin:auto;padding:32px;background:#fff}h1,h2,h3{color:var(--ink);line-height:1.2}h1{font-size:30px;margin-bottom:6px}h2{border-bottom:2px solid var(--blue);padding-bottom:6px;margin-top:36px}h3{margin-top:26px}table{border-collapse:collapse;width:100%;margin:14px 0 22px}th,td{border:1px solid var(--line);padding:9px;vertical-align:top;text-align:left}th{background:var(--pale)}code{font:13px Consolas,monospace;background:#f3f5f7;padding:1px 4px;border-radius:3px}.note,.warning,.ok{padding:13px 16px;border-left:5px solid;margin:18px 0}.note{background:var(--pale);border-color:var(--blue)}.warning{background:var(--warn);border-color:#d39e00}.ok{background:var(--good);border-color:#388e3c}.flow{background:#f7f9fa;border:1px solid var(--line);padding:16px;white-space:pre-wrap;font:14px Consolas,monospace}a{color:#075c8a}.small{color:#55616f;font-size:13px}ul{padding-left:22px}li{margin:5px 0}@media print{body{max-width:none;padding:16px}h2{break-after:avoid}table{font-size:12px}}
+  </style>
+</head>
+<body>
+  <h1>Previsão de cirurgias eletivas, urgentes e emergentes</h1>
+  <p>Guia para replicar a solução em outros hospitais da rede.</p>
+  <p class="small">Baseado nos notebooks atualmente referenciados pelo job Databricks <code>406550231727761</code>, nos metadados do Unity Catalog e na configuração de produção consultados no workspace. Onde o código não define uma regra ou uma decisão de negócio, este documento não a presume.</p>
+
+  <div class="warning"><strong>Escopo.</strong> O job também possui tarefas de previsão de internações diretas e TMP/leito. Elas são dependências operacionais do fluxo, mas não foram detalhadas como modelos de cirurgia aqui. A previsão de urgências consome <code>previsao_demanda_ps</code>, cuja origem é o pipeline de previsão do pronto-socorro.</div>
+
+  <h2>1. Visão geral</h2>
+  <p>A solução produz previsões diárias para até 365 dias e uma distribuição horária da demanda cirúrgica. Eletivas e urgências seguem metodologias diferentes porque apenas as eletivas possuem agenda futura observável.</p>
+  <div class="flow">Fontes clínicas e agenda
+        │
+        ├── Eletivas: agenda conhecida + modelo de volume total ──► previsao_eletivas
+        │                                                          (diária, por DFU)
+        │
+        ├── Urgências: histórico de cirurgias + PS previsto ─────► previsao_urgencia_emergencia
+        │                                                          (diária, total)
+        │
+        └── Histórico de horários + previsões diárias ───────────► previsao_cirurgias_quebra_hora
+                                                                   (diária, DFU, hora)</div>
+
+  <h3>Demanda conhecida versus desconhecida</h3>
+  <table>
+    <tr><th>Conceito</th><th>Definição implementada</th><th>Uso</th></tr>
+    <tr><td>Conhecida</td><td>Cirurgias eletivas presentes na agenda futura, ativas e não canceladas. Na saída da previsão eletiva é <code>agendamentos</code>.</td><td>É preservada integralmente na previsão diária e alocada na hora agendada (<code>hr_inicio</code>).</td></tr>
+    <tr><td>Desconhecida — eletiva</td><td><code>previsao_final - agendamentos</code>.</td><td>Representa o complemento esperado além do que já está na agenda. É distribuído por hora segundo taxas históricas por DFU e dia da semana.</td></tr>
+    <tr><td>Desconhecida — urgência/emergência</td><td>Toda a previsão de urgência/emergência; não há agenda equivalente no fluxo.</td><td>É distribuída por hora por taxas históricas da DFU fixa <code>Urgência e Emergência</code> e dia da semana.</td></tr>
+  </table>
+  <div class="note">A regra de arredondamento da quebra horária preserva o total diário: calcula a cota real por hora, toma o piso e entrega as unidades restantes às maiores frações.</div>
+
+  <h2>2. Modelo de eletivas</h2>
+  <h3>População e segmentação</h3>
+  <p>O histórico parte de <code>bi_dev.gold.hc_cirurgia</code> e a agenda de <code>bi_dev.gold.hc_agenda_cirurgica</code>. No código de produção atual, há filtros fixos para <code>hub = 'Campinas'</code>, estabelecimento cirúrgico <code>cd_estabelecimento = 2</code> e agenda do estabelecimento <code>Hospital Vera Cruz S/a</code>. A replicação precisa substituir esses critérios por identificadores validados do novo hospital.</p>
+  <p>As cirurgias são agrupadas em DFU (as categorias observadas na saída são seis): <code>Robótica</code>, <code>Infantil</code>, <code>Ortopedia</code>, <code>Ginecologia e Obstetrícia</code>, <code>Cirurgia Geral</code> e <code>Outros</code>. A prioridade da regra é: robótica; idade ≤14; especialidades pediátricas; ortopedia; ginecologia/obstetrícia; especialidades de cirurgia geral/oncológicas/urologia; demais. A mesma regra é aplicada à cirurgia realizada e à agenda, com a coluna de especialidade correspondente.</p>
+
+  <h3>Construção da série</h3>
+  <ol>
+    <li>São selecionadas eletivas realizadas e contadas por data de início real e DFU.</li>
+    <li>Para cada data desde 2023-01-01, cada DFU e cada antecedência de 1 a 50 dias, cria-se um painel completo — inclusive para volume zero.</li>
+    <li>Para cada cirurgia agendada, contam-se os agendamentos que estavam ativos naquela antecedência: agenda já existente e ainda não cancelada. Cancelamentos usam <code>dt_cancelamento</code> ou uma data extraída de <code>ds_motivo_cancelamento</code>.</li>
+    <li>O alvo <code>y</code> é o total diário de cirurgias realizadas. Para o modelo de curto prazo, o alvo treinado é <code>y - agendamentos</code>, isto é, o residual desconhecido.</li>
+  </ol>
+
+  <h3>Detalhamento das bases de treinamento e previsão</h3>
+  <p>Esta é a parte mais importante da modelagem eletiva: a agenda não é simplesmente adicionada como uma coluna. O modelo de curto prazo aprende o volume <em>ainda não conhecido</em> em cada ponto no tempo, condicionado ao que já estava agendado naquela antecedência.</p>
+  <table>
+    <tr><th>Base</th><th>Como é construída</th><th>Chave e uso</th></tr>
+    <tr><td>Histórico de realizadas</td><td>Filtra cirurgias eletivas realizadas. Agrupa a contagem por data de início real e DFU.</td><td><code>data_cirurgia, dfu</code>. Gera <code>total_cirurgias_realizadas_dia</code>, que é o alvo bruto <code>y</code>.</td></tr>
+    <tr><td>Histórico de agenda em perspectiva</td><td>Para cada registro de agenda, calcula <code>antecedencia_agendamento = data_cirurgia − data_agendamento</code>. Se houver cancelamento, calcula também <code>antecedencia_cancelamento = data_cirurgia − data_cancelamento_final</code>. A data final de cancelamento é <code>dt_cancelamento</code> ou a data extraída do texto de <code>ds_motivo_cancelamento</code>.</td><td>Permite reconstruir o que era conhecido <em>naquela antecedência</em>, sem usar a visão atual da agenda para explicar o passado.</td></tr>
+    <tr><td>Painel histórico</td><td>Cria o produto cartesiano entre todas as datas de 2023-01-01 até ontem, DFUs observadas na agenda e antecedências inteiras de 1 a 50.</td><td><code>data_cirurgia, dfu, dias_antecedencia</code>. O scaffold garante observações com zero, essenciais para uma série regular.</td></tr>
+    <tr><td>Agendamentos ativos no histórico</td><td>Um agendamento entra na contagem quando <code>dias_antecedencia ≤ antecedencia_agendamento</code> e, se cancelado, <code>dias_antecedencia &gt; antecedencia_cancelamento</code>. A contagem é agregada por DFU, data e antecedência.</td><td>Produz <code>agendamentos</code>: quantas cirurgias futuras já eram conhecidas naquele ponto de observação.</td></tr>
+    <tr><td>Base de treino curta</td><td>Une o painel, os agendamentos ativos, as realizadas e calendário. Renomeia data para <code>ds</code>; cria <code>unique_id = dfu + ' / ' + dias_antecedencia</code>; transforma o alvo em <code>y − agendamentos</code>.</td><td>Um modelo é treinado para cada antecedência (e, na variação local, por DFU). A previsão é o residual desconhecido, não o total de cirurgias.</td></tr>
+    <tr><td>Base futura</td><td>Filtra a agenda futura ativa: eletiva, não cancelada, não cancelada no status, exclui Ressonância/Tomografia e usa os filtros do hospital. Agrupa por data, DFU e <code>dias_antecedencia_fut = data − hoje + 1</code>. Depois cria um scaffold de todas as datas entre hoje e a maior data agendada × todos os DFUs; faz left join e preenche agenda ausente com zero. Junta feriado e <code>periodo_baixa</code>.</td><td><code>ds, dfu, dias_antecedencia_fut</code>. Para o curto prazo, mantém até 50 dias e usa o mesmo <code>unique_id</code> da base de treino. Portanto, mesmo um DFU sem agenda em uma data possui uma linha de previsão.</td></tr>
+  </table>
+  <p>Na inferência curta, o modelo recebe a base futura com agenda e calendário, prevê o residual e soma os <code>agendamentos</code> de volta. O resultado final nunca pode ficar abaixo da agenda. Já o caminho de longo prazo usa a série diária por DFU sem a dimensão de antecedência; seus dados de treino são complementados pelas previsões de curto prazo antes de projetar o restante do horizonte.</p>
+  <div class="note"><strong>Exemplo conceitual.</strong> Se uma data histórica terminou com 10 eletivas realizadas e, 20 dias antes, apenas 6 estavam ativas na agenda, a observação de treino dessa data/DFU/antecedência tem <code>y = 10 − 6 = 4</code>. Na previsão, se para uma data futura houver 7 agendamentos, o modelo estima o complemento e soma 7, em vez de tentar prever novamente aquilo que já está explicitamente na agenda.</div>
+
+  <h3>Modelos e seleção efetivamente usados</h3>
+  <p>O notebook usa <code>MLForecast</code> com <code>LGBMRegressor</code>, <code>XGBRegressor</code> e <code>LinearRegression</code>. Contudo, a previsão que segue para a saída usa apenas a coluna do LightGBM:</p>
+  <ul>
+    <li>Curto prazo: horizonte <strong>50 dias</strong>. Treina abordagens global e local por DFU/antecedência; a previsão escolhida é <code>max(previsao_global_LGBM, previsao_local_LGBM)</code>, depois soma-se <code>agendamentos</code>.</li>
+    <li>Longo prazo: horizonte <strong>365 dias</strong>; LightGBM por DFU. Para além do curto prazo, a série de treino incorpora as previsões de agenda do curto prazo.</li>
+    <li>Pós-processamento: usa a previsão curta quando disponível, senão a longa; aplica <code>max(previsao, agendamentos)</code>, arredonda para inteiro e limita o mínimo a zero.</li>
+  </ul>
+  <div class="warning"><strong>Importante:</strong> embora XGBoost e regressão linear sejam calculados, não há seleção dinâmica por métrica no caminho que grava a tabela. Não trate-os como ensemble de produção sem mudar o código e validar o backtest.</div>
+
+  <h3>Variáveis de entrada do modelo eletivo</h3>
+  <table>
+    <tr><th>Grupo</th><th>Variáveis/transformações</th></tr>
+    <tr><td>Alvo</td><td>Contagem de eletivas realizadas por <code>data_cirurgia</code> e <code>dfu</code>; no curto prazo, residual após subtrair <code>agendamentos</code>.</td></tr>
+    <tr><td>Agenda</td><td>Data de agenda/agendamento, status e cancelamento, caráter, estabelecimento, agenda, procedimento, médico, paciente e especialidade; a agenda futura fornece <code>agendamentos</code>.</td></tr>
+    <tr><td>Defasagens</td><td>Lags 1–7 no curto prazo; 1–7 e 14 no longo prazo; médias móveis de 7 e 30 dias aplicadas ao lag 1.</td></tr>
+    <tr><td>Calendário</td><td>Dia da semana, mês, ano e semana; no longo prazo também trimestre, início e fim do mês. A série leva <code>feriado</code> e <code>periodo_baixa</code> (22/dez–05/jan), a partir do calendário.</td></tr>
+    <tr><td>Categoria</td><td><code>feature_dfu</code> numérica estática na abordagem global.</td></tr>
+  </table>
+
+  <h2>3. Modelo de urgências e emergências</h2>
+  <p>O alvo é a contagem diária de cirurgias realizadas não eletivas, no estabelecimento filtrado. A previsão final é única — não é estratificada por DFU — e é publicada na categoria usada depois pela quebra horária: <code>Urgência e Emergência</code>.</p>
+
+  <h3>Covariáveis</h3>
+  <ul>
+    <li>Histórico de atendimentos de pronto-socorro de <code>bi_dev.gold.hc_atend_senha_medico_ps</code>, filtrado para Campinas, não cancelado e setor contendo HVC.</li>
+    <li>Esses atendimentos são agrupados por dia em: Cardiologia, Dengue, doenças geniturinárias, doenças respiratórias/tosse/febre, doenças infecciosas/parasitárias, Geral, Ginecológica/Obstétrica, Ortopedia e Pediatria. A regra usa CID, título do CID e clínica.</li>
+    <li>Codificações cíclicas de dia da semana e mês; <code>ferias_escolares</code>; feriados (feriados em sábado/domingo são zerados no conjunto histórico).</li>
+    <li>No futuro, a covariável de PS vem de <code>{catalog}.ds_pipeline.previsao_demanda_ps</code> para a data de processamento corrente; os nomes de suas colunas são convertidos para os agrupamentos acima.</li>
+  </ul>
+
+  <h3>Avaliação e previsão em produção</h3>
+  <p>O notebook compara, em backtest de 30 dias com stride de 30 e início 90 dias antes da execução: Naive Seasonal (K=7), Exponential Smoothing, AutoARIMA, AutoETS, Chronos2, regressão linear, Prophet e duas configurações LightGBM. As métricas calculadas são MAE, RMSE, sMAPE e dois indicadores de viés.</p>
+  <div class="warning"><strong>Decisão codificada:</strong> apesar da comparação, a etapa de previsão futura instancia diretamente <code>Prophet(country_holidays='BR')</code>, treina com as covariáveis e prevê <strong>365 dias</strong>. Não há código que escolha automaticamente o vencedor do backtest.</div>
+  <p>A saída é arredondada, limitada a zero e recebe <code>data_processamento</code>, <code>distancia_previsao</code> e <code>import_date</code>.</p>
+
+  <h2>4. Quebra horária</h2>
+  <ol>
+    <li>Calcula taxas históricas <code>qtd_hora / total_dia</code> por <code>dfu</code>, dia da semana e hora, separadamente para eletivas e urgências.</li>
+    <li>Preserva os agendamentos eletivos futuros na hora registrada.</li>
+    <li>Distribui somente a demanda desconhecida das eletivas e toda a demanda das urgências segundo as taxas históricas.</li>
+    <li>Une a demanda conhecida e a desconhecida, calcula <code>previsao_hora</code>, acrescenta metadados de processamento e sobrescreve a tabela final.</li>
+  </ol>
+  <div class="warning">O notebook contém uma validação de que a soma horária bate com a previsão diária, mas ela está dentro de uma string comentada. Para uma nova implantação, recomenda-se reativá-la e torná-la critério de falha do job.</div>
+
+  <h2>5. Contratos de dados</h2>
+  <h3>Principais entradas</h3>
+  <table>
+    <tr><th>Tabela</th><th>Uso e campos consumidos</th></tr>
+    <tr><td><code>bi_dev.gold.hc_cirurgia</code></td><td>Histórico e horários reais. Campos usados incluem <code>hub</code>, <code>cd_estabelecimento</code>, <code>ds_carater</code>, <code>ds_status_cirurgia</code>, <code>dt_inicio_real</code>, <code>dt_termino</code>, procedimento, setor, paciente, atendimento e especialidade.</td></tr>
+    <tr><td><code>bi_dev.gold.hc_agenda_cirurgica</code></td><td>Agenda eletiva, antecedência, cancelamento e hora. Necessita data/hora de agenda, data de agendamento, status/cancelamento, caráter, estabelecimento, agenda, procedimento, médico, paciente e especialidade.</td></tr>
+    <tr><td><code>bi_dev.gold.hc_pessoa_fisica</code></td><td>Idade (<code>nr_anos</code>) para DFU infantil e vínculo do paciente ao hub.</td></tr>
+    <tr><td><code>planejamento_integrado.gold.calendario</code></td><td><code>data</code>, <code>cidade</code>, <code>feriado</code> e <code>ferias_escolares</code>. A cidade hoje está fixa como Campinas.</td></tr>
+    <tr><td><code>bi_dev.gold.hc_atend_senha_medico_ps</code> + <code>bi_dev.gold.hc_atendimento_paciente</code></td><td>Covariáveis históricas do PS e identificação de internação em janela de ±6 horas.</td></tr>
+    <tr><td><code>{catalog}.ds_pipeline.previsao_demanda_ps</code></td><td>Covariáveis futuras de PS para a previsão de urgências. Deve estar disponível para o mesmo <code>data_processamento</code>.</td></tr>
+  </table>
+
+  <h3>Saídas</h3>
+  <table>
+    <tr><th>Tabela Delta</th><th>Granularidade e colunas</th><th>Gravação</th></tr>
+    <tr><td><code>{catalog}.ds_pipeline.previsao_eletivas</code></td><td><code>ds</code>, <code>dfu</code>, <code>previsao_final</code>, <code>agendamentos</code>, <code>data_processamento</code>, <code>distancia_previsao</code>, <code>import_date</code>.</td><td>Função utilitária com substituição por data de processamento.</td></tr>
+    <tr><td><code>{catalog}.ds_pipeline.previsao_urgencia_emergencia</code></td><td><code>dt_referencia</code>, <code>previsao_emergencia_e_urgencia</code>, <code>data_processamento</code>, <code>distancia_previsao</code>, <code>import_date</code>.</td><td>Função utilitária com substituição por data de processamento.</td></tr>
+    <tr><td><code>{catalog}.ds_pipeline.previsao_cirurgias_quebra_hora</code></td><td><code>data</code>, <code>dfu</code>, <code>hora</code>, <code>previsao_hora</code>, <code>data_processamento</code>, <code>distancia_previsao</code>, <code>import_date</code>.</td><td><code>overwrite_table</code>: retém somente a execução mais recente.</td></tr>
+  </table>
+
+  <h2>6. Implementação em produção</h2>
+  <table>
+    <tr><th>Item</th><th>Configuração observada</th></tr>
+    <tr><td>Job</td><td><code>406550231727761</code>, nome <code>pi_previsao_cirurgias</code>; definição de bundle em <code>/Workspace/PlanejamentoIntegradoBundle/prod/state/metadata.json</code>.</td></tr>
+    <tr><td>Parâmetro</td><td>As tarefas recebem <code>catalog=planejamento_integrado</code>.</td></tr>
+    <tr><td>Cluster</td><td>Job cluster <code>pi_compute</code>, single-node, <code>Standard_F8</code>, Databricks Runtime <code>16.4.x-scala2.12</code>, modo de segurança dedicado.</td></tr>
+    <tr><td>Confiabilidade</td><td>Uma execução concorrente, fila habilitada, até 2 tentativas por tarefa e intervalo mínimo de retry de 1.000.000 ms; alerta de falha para <code>elder.horta@dhauz.com</code>.</td></tr>
+    <tr><td>Agendamento</td><td>A configuração retornada do job não contém gatilho/cron. O histórico consultado mostra execuções <code>ONE_TIME</code>; confirmar externamente quem as dispara antes de replicar a operação.</td></tr>
+  </table>
+  <p>Ordem das tarefas:</p>
+  <div class="flow">previsao_eletivas ─────────────┬──► previsao_tmp
+                                  ├──► previsao_urgentes ──► quebra_horaria_cirurgias
+previsao_internacao_outros ───────┘</div>
+  <p>Notebooks executados:</p>
+  <ul>
+    <li><code>/Workspace/PlanejamentoIntegradoBundle/prod/files/src/ds_pipeline/05. Previsão Eletivas</code></li>
+    <li><code>/Workspace/PlanejamentoIntegradoBundle/prod/files/src/ds_pipeline/06. Previsão Cirurgias Urgentes e Emergentes</code></li>
+    <li><code>/Workspace/PlanejamentoIntegradoBundle/prod/files/src/ds_pipeline/07. Quebra horária - Cirurgias</code></li>
+    <li><code>/Workspace/PlanejamentoIntegradoBundle/prod/files/src/ds_pipeline/Controle de fluxo - internações diretas</code></li>
+    <li><code>/Workspace/PlanejamentoIntegradoBundle/prod/files/src/ds_pipeline/11. Previsão TMP + Leito</code></li>
+  </ul>
+
+  <h2>7. Roteiro de replicação</h2>
+  <ol>
+    <li>Validar com o hospital os identificadores de hub, estabelecimento, nome de estabelecimento, setor de PS e cidade do calendário. Não reutilizar os filtros de Campinas/Vera Cruz.</li>
+    <li>Validar se os campos de agenda, cirurgia, paciente e PS existem com a semântica esperada; em especial, status de realização/cancelamento, hora de início e especialidade.</li>
+    <li>Revisar e aprovar a taxonomia DFU com o time clínico. Se ela mudar, aplicar a mesma regra ao histórico, agenda e quebra horária.</li>
+    <li>Assegurar histórico diário suficiente e cobertura de agenda; medir lacunas antes do treino. O código atual inicia o painel de eletivas em 2023-01-01.</li>
+    <li>Construir ou adaptar a previsão de demanda de PS e confirmar que suas colunas atendem ao mapeamento de agrupamentos do notebook de urgências.</li>
+    <li>Executar backtests por hospital e registrar as métricas. A seleção de Prophet para urgências e LightGBM para eletivas é fixa no código atual, portanto deve ser reavaliada antes de assumir que é a melhor escolha.</li>
+    <li>Parametrizar catálogo, filtros de hospital e cidade; corrigir os defaults divergentes: eletivas e quebra horária fazem fallback para <code>planejamento_integrado_dev</code>, enquanto urgências faz fallback para <code>planejamento_integrado</code>.</li>
+    <li>Criar as tabelas de saída no catálogo-alvo e configurar permissões para a identidade que executará o job.</li>
+    <li>Executar o fluxo completo em ambiente não produtivo, conciliando: soma das horas = previsão diária; previsão eletiva ≥ agenda; não negativos; uma versão/snapshot por data de processamento.</li>
+    <li>Publicar via bundle, configurar o gatilho operacional e monitorar tentativas, logs e frescor das tabelas de entrada.</li>
+  </ol>
+
+  <h2>8. Pontos que exigem decisão antes de copiar</h2>
+  <div class="warning"><ul>
+    <li>O código instala bibliotecas durante a execução (MLForecast, LightGBM, XGBoost, Darts, Prophet e outras). Para operação estável, definir versões compatíveis em dependências do job/ambiente e testar no runtime escolhido.</li>
+    <li>A função <code>write_to_table</code> vem de um módulo <code>utils</code> no diretório pai dos notebooks. Esse módulo e sua estratégia de escrita/log devem acompanhar a réplica; o job depende dele para as três saídas e para observabilidade.</li>
+    <li>A cidade do calendário e os filtros de hospital são regras de negócio, não hiperparâmetros estatísticos. Eles precisam de validação do responsável pelo novo hospital.</li>
+    <li>O job é executado por service principal. A nova identidade precisa de leitura nas fontes, escrita nas saídas, acesso ao workspace/bundle e permissão de criação/uso do cluster.</li>
+  </ul></div>
+
+  <div class="ok"><strong>Checklist de aceite mínimo:</strong> entradas atualizadas; horizonte 1–365 completo; DFUs esperadas; previsão eletiva nunca menor que agenda; soma horária conciliada; tabela de urgência possui uma linha por data e snapshot; execução e retry verificados no job.</div>
+</body>
+</html>

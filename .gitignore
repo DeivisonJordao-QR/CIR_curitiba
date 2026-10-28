@@ -1,0 +1,9 @@
+__pycache__/
+*.py[cod]
+.vscode/
+.agents/
+.databricks/*
+!.databricks/.gitignore
+.job_update_*.json
+.run_request_*.json
+.smoke_previsoes.csv

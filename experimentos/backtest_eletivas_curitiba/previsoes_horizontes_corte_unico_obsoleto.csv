@@ -1,0 +1,61 @@
+ds,dfu,previsao_final,hub,variante,data_processamento,distancia_previsao,realizado,agendamentos,horizonte
+2026-01-01,Cirurgia Geral,0,Curitiba,sem_agenda,2026-01-01,1,0,,D1
+2026-01-01,Ginecologia e Obstetrícia,0,Curitiba,sem_agenda,2026-01-01,1,0,,D1
+2026-01-01,Infantil,0,Curitiba,sem_agenda,2026-01-01,1,0,,D1
+2026-01-01,Ortopedia,0,Curitiba,sem_agenda,2026-01-01,1,0,,D1
+2026-01-01,Outros,1,Curitiba,sem_agenda,2026-01-01,1,0,,D1
+2026-01-01,Robótica,0,Curitiba,sem_agenda,2026-01-01,1,0,,D1
+2026-01-02,Cirurgia Geral,1,Curitiba,sem_agenda,2026-01-01,2,1,,D2
+2026-01-02,Ginecologia e Obstetrícia,0,Curitiba,sem_agenda,2026-01-01,2,0,,D2
+2026-01-02,Infantil,0,Curitiba,sem_agenda,2026-01-01,2,0,,D2
+2026-01-02,Ortopedia,0,Curitiba,sem_agenda,2026-01-01,2,0,,D2
+2026-01-02,Outros,2,Curitiba,sem_agenda,2026-01-01,2,1,,D2
+2026-01-02,Robótica,0,Curitiba,sem_agenda,2026-01-01,2,0,,D2
+2026-01-07,Cirurgia Geral,7,Curitiba,sem_agenda,2026-01-01,7,3,,D7
+2026-01-07,Ginecologia e Obstetrícia,0,Curitiba,sem_agenda,2026-01-01,7,0,,D7
+2026-01-07,Infantil,0,Curitiba,sem_agenda,2026-01-01,7,0,,D7
+2026-01-07,Ortopedia,0,Curitiba,sem_agenda,2026-01-01,7,0,,D7
+2026-01-07,Outros,16,Curitiba,sem_agenda,2026-01-01,7,8,,D7
+2026-01-07,Robótica,0,Curitiba,sem_agenda,2026-01-01,7,0,,D7
+2026-01-30,Cirurgia Geral,9,Curitiba,sem_agenda,2026-01-01,30,11,,D30
+2026-01-30,Ginecologia e Obstetrícia,0,Curitiba,sem_agenda,2026-01-01,30,0,,D30
+2026-01-30,Infantil,0,Curitiba,sem_agenda,2026-01-01,30,0,,D30
+2026-01-30,Ortopedia,0,Curitiba,sem_agenda,2026-01-01,30,0,,D30
+2026-01-30,Outros,20,Curitiba,sem_agenda,2026-01-01,30,21,,D30
+2026-01-30,Robótica,0,Curitiba,sem_agenda,2026-01-01,30,0,,D30
+2026-03-31,Cirurgia Geral,12,Curitiba,sem_agenda,2026-01-01,90,7,,D90
+2026-03-31,Ginecologia e Obstetrícia,0,Curitiba,sem_agenda,2026-01-01,90,0,,D90
+2026-03-31,Infantil,0,Curitiba,sem_agenda,2026-01-01,90,0,,D90
+2026-03-31,Ortopedia,0,Curitiba,sem_agenda,2026-01-01,90,0,,D90
+2026-03-31,Outros,20,Curitiba,sem_agenda,2026-01-01,90,22,,D90
+2026-03-31,Robótica,0,Curitiba,sem_agenda,2026-01-01,90,0,,D90
+2026-01-01,Cirurgia Geral,0,Curitiba,com_agenda,2026-01-01,1,0,0.0,D1
+2026-01-01,Ginecologia e Obstetrícia,0,Curitiba,com_agenda,2026-01-01,1,0,0.0,D1
+2026-01-01,Infantil,0,Curitiba,com_agenda,2026-01-01,1,0,0.0,D1
+2026-01-01,Ortopedia,0,Curitiba,com_agenda,2026-01-01,1,0,0.0,D1
+2026-01-01,Outros,0,Curitiba,com_agenda,2026-01-01,1,0,0.0,D1
+2026-01-01,Robótica,0,Curitiba,com_agenda,2026-01-01,1,0,0.0,D1
+2026-01-02,Cirurgia Geral,1,Curitiba,com_agenda,2026-01-01,2,1,1.0,D2
+2026-01-02,Ginecologia e Obstetrícia,0,Curitiba,com_agenda,2026-01-01,2,0,0.0,D2
+2026-01-02,Infantil,0,Curitiba,com_agenda,2026-01-01,2,0,0.0,D2
+2026-01-02,Ortopedia,0,Curitiba,com_agenda,2026-01-01,2,0,0.0,D2
+2026-01-02,Outros,1,Curitiba,com_agenda,2026-01-01,2,1,1.0,D2
+2026-01-02,Robótica,0,Curitiba,com_agenda,2026-01-01,2,0,0.0,D2
+2026-01-07,Cirurgia Geral,5,Curitiba,com_agenda,2026-01-01,7,3,3.0,D7
+2026-01-07,Ginecologia e Obstetrícia,0,Curitiba,com_agenda,2026-01-01,7,0,0.0,D7
+2026-01-07,Infantil,0,Curitiba,com_agenda,2026-01-01,7,0,0.0,D7
+2026-01-07,Ortopedia,0,Curitiba,com_agenda,2026-01-01,7,0,0.0,D7
+2026-01-07,Outros,11,Curitiba,com_agenda,2026-01-01,7,8,7.0,D7
+2026-01-07,Robótica,0,Curitiba,com_agenda,2026-01-01,7,0,0.0,D7
+2026-01-30,Cirurgia Geral,7,Curitiba,com_agenda,2026-01-01,30,11,0.0,D30
+2026-01-30,Ginecologia e Obstetrícia,0,Curitiba,com_agenda,2026-01-01,30,0,0.0,D30
+2026-01-30,Infantil,0,Curitiba,com_agenda,2026-01-01,30,0,0.0,D30
+2026-01-30,Ortopedia,0,Curitiba,com_agenda,2026-01-01,30,0,0.0,D30
+2026-01-30,Outros,20,Curitiba,com_agenda,2026-01-01,30,21,5.0,D30
+2026-01-30,Robótica,0,Curitiba,com_agenda,2026-01-01,30,0,0.0,D30
+2026-03-31,Cirurgia Geral,10,Curitiba,com_agenda,2026-01-01,90,7,0.0,D90
+2026-03-31,Ginecologia e Obstetrícia,1,Curitiba,com_agenda,2026-01-01,90,0,0.0,D90
+2026-03-31,Infantil,1,Curitiba,com_agenda,2026-01-01,90,0,0.0,D90
+2026-03-31,Ortopedia,1,Curitiba,com_agenda,2026-01-01,90,0,0.0,D90
+2026-03-31,Outros,21,Curitiba,com_agenda,2026-01-01,90,22,1.0,D90
+2026-03-31,Robótica,1,Curitiba,com_agenda,2026-01-01,90,0,0.0,D90

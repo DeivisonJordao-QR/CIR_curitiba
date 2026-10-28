@@ -1,0 +1,56 @@
+{
+  "run_id": "backtest_rolling_20260101_90d_81b63d55",
+  "hub": "Curitiba",
+  "data_processamento": "2026-10-22",
+  "data_inicio_periodo": "2026-01-01",
+  "data_fim_periodo": "2026-03-31",
+  "dias_previstos": 90,
+  "horizontes_avaliados": [
+    "D1",
+    "D2",
+    "D7",
+    "D30",
+    "D90"
+  ],
+  "quantidade_origens_moveis": 179,
+  "tempo_execucao_segundos": 541.0,
+  "observacoes_por_horizonte": 540,
+  "dias_treino_minimos": 730,
+  "variantes": [
+    "sem_agenda"
+  ],
+  "normalizacao_especialidades_curitiba": {
+    "Ortopedia / Traumatologia": "Ortopedia",
+    "Ginecologia": "Ginecologia e Obstetrícia",
+    "Cancerologia": "Cirurgia Geral (mesmo grupo de Cirurgia Oncológica)"
+  },
+  "progresso_execucao": "logs com tempos por origem e variante, etapas de treino/inferência e ETA móvel",
+  "metricas_descritivas_sem_limite_de_aprovacao": [
+    "MAE",
+    "RMSE",
+    "vies",
+    "WAPE"
+  ],
+  "regra_eletividade": "dt_inicio_real - min(dt_agendamento) >= 24h por hub+nr_cirurgia",
+  "sem_conversao_de_fuso": true,
+  "fontes_somente_leitura": [
+    "bi_dev.gold.hc_cirurgia",
+    "bi_dev.gold.hc_agenda_cirurgica",
+    "bi_dev.gold.hc_pessoa_fisica",
+    "planejamento_integrado.gold.calendario_curitiba"
+  ],
+  "gravacao_em_tabelas": false,
+  "historico_agenda_ponto_no_tempo": "aproximado; fonte consultada não é snapshot versionado de dt_agenda",
+  "auditoria_eletividade": {
+    "cirurgias_realizadas_com_chave": 54418,
+    "sem_criacao": 16282,
+    "criadas_menos_de_24h_antes": 5934,
+    "eletivas_elegiveis": 32202,
+    "cirurgias_com_multiplos_agendamentos": 0,
+    "cirurgias_com_empate_na_criacao": 0
+  },
+  "artefatos": {
+    "previsoes_rolling": "/Workspace/Users/deivison.jordao-dhauz@hospitalcare.com.br/experimentos/previsao_eletivas_curitiba/backtest/backtest_rolling_20260101_90d_81b63d55/previsoes_rolling.csv",
+    "metricas": "/Workspace/Users/deivison.jordao-dhauz@hospitalcare.com.br/experimentos/previsao_eletivas_curitiba/backtest/backtest_rolling_20260101_90d_81b63d55/metricas.csv"
+  }
+}

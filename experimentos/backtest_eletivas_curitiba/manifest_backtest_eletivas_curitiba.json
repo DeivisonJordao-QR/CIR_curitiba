@@ -1,0 +1,64 @@
+{
+  "title": "Backtest rolling de cirurgias eletivas — Curitiba",
+  "sidebar_title": "Backtest eletivas",
+  "slides": [
+    {
+      "type": "cover",
+      "menu": "Abertura",
+      "eyebrow": "Experimento retrospectivo",
+      "title": "Previsão de cirurgias eletivas",
+      "subtitle": "Previsão sem features de agenda comparada ao realizado, por DFU e horizonte.",
+      "period": "Intervalo previsto: 01/01 a 31/03/2026 · D1, D2, D7, D30 e D90",
+      "evidence": "Job run 197346402116066 · Databricks pessoal"
+    },
+    {
+      "type": "kpi_summary",
+      "menu": "Resumo",
+      "title": "Escopo deste resultado",
+      "cards": [
+        {"label": "Intervalo previsto", "value": "90 dias", "note": "01/01 a 31/03/2026"},
+        {"label": "Previsões", "value": "2.700", "note": "90 dias × 6 DFUs × 5 horizontes"},
+        {"label": "Variante", "value": "Sem agenda", "note": "Uma previsão por DFU, dia e horizonte"},
+        {"label": "Origens móveis", "value": "179", "note": "Cada horizonte usa seu próprio corte"}
+      ],
+      "takeaways": [
+        {"heading": "Leitura do gráfico", "text": "Selecione D1, D2, D7, D30 ou D90. Cada painel mostra 90 dias de realizado e previsão para uma DFU."},
+        {"heading": "Comparação", "text": "Para cada data prevista, todos os horizontes são comparados ao realizado daquela mesma data; cada horizonte usa seu próprio corte dos dados."}
+      ]
+    },
+    {
+      "type": "chart",
+      "menu": "Previsto × realizado",
+      "title": "Séries diárias por DFU e horizonte",
+      "subtitle": "Use os botões D1, D2, D7, D30 e D90 para alternar o horizonte.",
+      "plotly_file": "grafico_comparativo.html"
+    },
+    {
+      "type": "table",
+      "menu": "Métricas",
+      "title": "Métricas agregadas nos seis grupos DFU",
+      "subtitle": "540 observações por horizonte. MAE e RMSE são contagens médias por DFU/dia; WAPE é o erro absoluto total dividido pelo realizado total.",
+      "columns": ["Horizonte", "MAE", "RMSE", "Viés", "WAPE", "Observações"],
+      "rows": [
+        ["D1", "1,51", "2,63", "0,11", "43,30%", "540"],
+        ["D2", "1,50", "2,56", "0,15", "43,03%", "540"],
+        ["D7", "1,45", "2,48", "0,20", "41,76%", "540"],
+        ["D30", "1,45", "2,50", "0,15", "41,76%", "540"],
+        ["D90", "1,52", "2,64", "0,25", "43,78%", "540"]
+      ],
+      "download_filename": "metricas_backtest_curitiba_90d.csv"
+    },
+    {
+      "type": "method",
+      "menu": "Método e limites",
+      "title": "Método, dados e limitações",
+      "paragraphs": [
+        "Resultado do run 197346402116066, artefato backtest_rolling_20260101_90d_81b63d55. Período alvo de 01/01 a 31/03/2026, seis DFUs e variante sem_agenda. Foram geradas 2.700 linhas: 90 datas × 6 DFUs × 5 horizontes. A execução levou 9m53s no job; o cálculo do backtest registrou 9m01s.",
+        "Para uma data prevista T e horizonte H, o início da previsão é T − (H − 1) dias; o treino usa somente dados anteriores a esse início. Assim, D1, D2, D7, D30 e D90 da mesma data têm cortes distintos e são comparados ao realizado no próprio dia T.",
+        "A elegibilidade usa dt_inicio_real menos o primeiro dt_agendamento maior ou igual a 24 horas, vinculados por hub e nr_cirurgia. Os horários são usados como armazenados, sem conversão de fuso. A variante sem_agenda não usa contagens de agenda como feature; a agenda ainda define a população eletiva do alvo. Fontes somente leitura e arquivos salvos na pasta pessoal do Workspace Databricks; nenhuma tabela foi escrita."
+      ],
+      "limitation": "Este resultado cobre um único intervalo de 90 dias e apenas a variante sem agenda; é descritivo, não compara variantes nem cortes de outras épocas. As DFUs usam as equivalências definidas para Curitiba. WAPE pode ficar indefinido para DFUs/horizontes sem cirurgias realizadas; a métrica agregada dos seis grupos está definida neste período.",
+      "footer": "Curitiba · Job run 197346402116066 · Dhauz design system 2.0.0"
+    }
+  ]
+}

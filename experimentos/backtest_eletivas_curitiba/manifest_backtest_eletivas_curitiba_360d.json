@@ -1,0 +1,72 @@
+{
+  "title": "Backtest rolling de cirurgias eletivas — Curitiba — 360 dias",
+  "sidebar_title": "Backtest eletivas 360d",
+  "slides": [
+    {
+      "type": "cover",
+      "menu": "Abertura",
+      "eyebrow": "Backtest retrospectivo",
+      "title": "Previsão de cirurgias eletivas",
+      "subtitle": "Realizado e previsto sem features de agenda, com seleção de DFU e horizonte.",
+      "period": "Intervalo previsto: 20/10/2025 a 2026-10-14 · D1, D2, D7, D30 e D90",
+      "evidence": "Job run 596487423390032 · Databricks pessoal"
+    },
+    {
+      "type": "kpi_summary",
+      "menu": "Resumo",
+      "title": "Escopo do backtest",
+      "cards": [
+        {
+          "label": "Período avaliado",
+          "value": "360 dias",
+          "note": "20/10/2025 a 2026-10-14"
+        },
+        {
+          "label": "Previsões",
+          "value": "10.800",
+          "note": "360 dias × 6 DFUs × 5 horizontes"
+        },
+        {
+          "label": "Variantes",
+          "value": "Sem agenda",
+          "note": "Uma variante selecionada"
+        },
+        {
+          "label": "Origens móveis",
+          "value": "449",
+          "note": "Treino recalculado conforme o horizonte"
+        }
+      ],
+      "takeaways": [
+        {
+          "heading": "Gráfico interativo",
+          "text": "Escolha uma DFU e um horizonte. O gráfico mostra as séries diárias de realizado e previsto; as métricas MAE, RMSE, viés e WAPE acompanham a seleção."
+        },
+        {
+          "heading": "Métrica agregada D1",
+          "text": "Nos seis grupos combinados: MAE 1,50, RMSE 2,57, viés 0,02 e WAPE 39,1%. São 2,160 observações (360 dias × 6 DFUs)."
+        }
+      ]
+    },
+    {
+      "type": "chart",
+      "menu": "Gráfico e métricas",
+      "title": "Previsto e realizado por seleção",
+      "subtitle": "As métricas aparecem acima do gráfico e correspondem à DFU e ao horizonte selecionados.",
+      "plotly_file": "grafico_backtest_eletivas_curitiba_360d.html",
+      "risk": "WAPE não é definido quando o realizado da DFU no período é zero; nesse caso, o indicador aparece como n/d."
+    },
+    {
+      "type": "method",
+      "menu": "Método e limites",
+      "title": "Método, dados e limitações",
+      "paragraphs": [
+        "Resultado do run 596487423390032. Foram avaliados 360 dias consecutivos, de 20/10/2025 a 2026-10-14, para seis DFUs, cinco horizontes e somente a variante sem_agenda. Isso produz 10.800 previsões e 360 observações por DFU/horizonte; o consolidado por horizonte tem 2.160 observações.",
+        "Para uma data prevista T e horizonte H, o treino usa somente dados anteriores ao início da janela de previsão T − (H − 1) dias. Assim, cada horizonte tem seu próprio corte móvel. O gráfico compara a previsão e o realizado na mesma data-alvo.",
+        "A elegibilidade usa dt_inicio_real menos o primeiro dt_agendamento maior ou igual a 24 horas, vinculados por hub e nr_cirurgia. Os timestamps são usados como armazenados, sem conversão de fuso. Fontes somente leitura; os resultados foram salvos em arquivos no Workspace pessoal, sem gravação em tabelas."
+      ],
+      "limitation": "Este backtest é retrospectivo, cobre um intervalo e uma única variante. A reconstrução histórica da agenda é aproximada porque dt_agenda não é snapshot temporal versionado. As métricas descrevem o período avaliado e não demonstram impacto operacional futuro.",
+      "footer": "Curitiba · Job run 596487423390032 · Dhauz design system 2.0.0"
+    }
+  ]
+}

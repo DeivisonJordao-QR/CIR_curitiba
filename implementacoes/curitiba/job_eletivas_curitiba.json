@@ -1,0 +1,24 @@
+{
+  "name": "previsao_eletivas_curitiba_experimento",
+  "description": "Execucao sob demanda das previsoes diarias de eletivas de Curitiba, com e sem features de agenda. Leitura das fontes e saida apenas na pasta pessoal do experimento.",
+  "tasks": [
+    {
+      "task_key": "prever_eletivas_curitiba",
+      "notebook_task": {
+        "notebook_path": "/Users/deivison.jordao-dhauz@hospitalcare.com.br/experimentos/previsao_eletivas_curitiba/run_experimentos",
+        "source": "WORKSPACE"
+      },
+      "existing_cluster_id": "0505-184220-djyvd4t5"
+    }
+  ],
+  "tags": {
+    "aidevkit_project": "ai-dev-kit",
+    "experiment": "previsao_eletivas_curitiba"
+  },
+  "format": "MULTI_TASK",
+  "max_concurrent_runs": 1,
+  "performance_target": "STANDARD",
+  "queue": {
+    "enabled": true
+  }
+}
